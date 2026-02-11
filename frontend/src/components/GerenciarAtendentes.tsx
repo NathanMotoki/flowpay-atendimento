@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Atendente, TipoTime } from '../types';
 import { atendenteService } from '../services/api';
-import { TipoTime as TipoTimeEnum } from '../types';
 
 interface GerenciarAtendentesProps {
   atendentes: Atendente[];

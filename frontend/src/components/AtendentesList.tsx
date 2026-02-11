@@ -1,32 +1,32 @@
-import { type Atendente, TipoTime } from '../types';
+import { type Atendente, type TipoTime } from '../types';
 
 interface AtendentesListProps {
   atendentes: Atendente[];
   tipoTime: TipoTime;
 }
 
-const TIME_LABELS = {
-  [TipoTime.CARTOES]: 'Time Cartões',
-  [TipoTime.EMPRESTIMOS]: 'Time Empréstimos',
-  [TipoTime.OUTROS_ASSUNTOS]: 'Time Outros Assuntos',
+const TIME_LABELS: Record<TipoTime, string> = {
+  CARTOES: 'Time Cartões',
+  EMPRESTIMOS: 'Time Empréstimos',
+  OUTROS_ASSUNTOS: 'Time Outros Assuntos',
 };
 
-const TIME_COLORS = {
-  [TipoTime.CARTOES]: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300',
-  [TipoTime.EMPRESTIMOS]: 'bg-gradient-to-br from-green-50 to-green-100 border-green-300',
-  [TipoTime.OUTROS_ASSUNTOS]: 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300',
+const TIME_COLORS: Record<TipoTime, string> = {
+  CARTOES: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300',
+  EMPRESTIMOS: 'bg-gradient-to-br from-green-50 to-green-100 border-green-300',
+  OUTROS_ASSUNTOS: 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300',
 };
 
-const TIME_ACCENT_COLORS = {
-  [TipoTime.CARTOES]: 'text-blue-700 bg-blue-100',
-  [TipoTime.EMPRESTIMOS]: 'text-green-700 bg-green-100',
-  [TipoTime.OUTROS_ASSUNTOS]: 'text-purple-700 bg-purple-100',
+const TIME_ACCENT_COLORS: Record<TipoTime, string> = {
+  CARTOES: 'text-blue-700 bg-blue-100',
+  EMPRESTIMOS: 'text-green-700 bg-green-100',
+  OUTROS_ASSUNTOS: 'text-purple-700 bg-purple-100',
 };
 
-const TIME_BADGE_COLORS = {
-  [TipoTime.CARTOES]: 'bg-blue-500',
-  [TipoTime.EMPRESTIMOS]: 'bg-green-500',
-  [TipoTime.OUTROS_ASSUNTOS]: 'bg-purple-500',
+const TIME_BADGE_COLORS: Record<TipoTime, string> = {
+  CARTOES: 'bg-blue-500',
+  EMPRESTIMOS: 'bg-green-500',
+  OUTROS_ASSUNTOS: 'bg-purple-500',
 };
 
 export function AtendentesList({ atendentes, tipoTime }: AtendentesListProps) {
@@ -34,7 +34,9 @@ export function AtendentesList({ atendentes, tipoTime }: AtendentesListProps) {
 
   return (
     <div className={`rounded-xl border-2 p-6 ${TIME_COLORS[tipoTime]} shadow-md hover:shadow-lg transition-shadow duration-300`}>
-      <h3 className={`text-lg font-bold mb-4 ${TIME_ACCENT_COLORS[tipoTime]} px-3 py-2 rounded-lg inline-block`}>{TIME_LABELS[tipoTime]}</h3>
+      <h3 className={`text-lg font-bold mb-4 ${TIME_ACCENT_COLORS[tipoTime]} px-3 py-2 rounded-lg inline-block`}>
+        {TIME_LABELS[tipoTime]}
+      </h3>
       
       <div className="space-y-3 mt-4">
         {atendentesDoTime.length === 0 ? (

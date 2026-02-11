@@ -1,14 +1,6 @@
-export enum TipoTime {
-  CARTOES = 'CARTOES',
-  EMPRESTIMOS = 'EMPRESTIMOS',
-  OUTROS_ASSUNTOS = 'OUTROS_ASSUNTOS'
-}
+export type TipoTime = 'CARTOES' | 'EMPRESTIMOS' | 'OUTROS_ASSUNTOS';
 
-export enum StatusAtendimento {
-  AGUARDANDO = 'AGUARDANDO',
-  EM_ATENDIMENTO = 'EM_ATENDIMENTO',
-  FINALIZADO = 'FINALIZADO'
-}
+export type StatusAtendimento = 'AGUARDANDO' | 'EM_ATENDIMENTO' | 'FINALIZADO';
 
 export interface Atendimento {
   id: number;

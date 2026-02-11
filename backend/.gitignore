@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# --- Configurações de Ambiente (Segurança) ---
+.env
+.env.local
+.env.*.local
+
+# --- Docker & Banco de Dados ---
+# Caso você mapeie o volume do banco para dentro da pasta do projeto
+postgres_data/
+.docker/
+
+# --- Logs ---
+*.log
