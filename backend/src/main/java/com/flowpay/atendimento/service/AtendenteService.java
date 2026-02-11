@@ -1,5 +1,6 @@
 package com.flowpay.atendimento.service;
 
+import com.flowpay.atendimento.exception.ResourceNotFoundException;
 import com.flowpay.atendimento.model.dto.request.NovoAtendenteRequest;
 import com.flowpay.atendimento.model.dto.response.AtendenteResponse;
 import com.flowpay.atendimento.model.entity.Atendente;
@@ -47,6 +48,12 @@ public class AtendenteService {
     @Transactional(readOnly = true)
     public Optional<Atendente> buscarPorId(Long id) {
         return atendenteRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Atendente buscarPorIdOuFalha(Long id) {
+        return atendenteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Atendente", id));
     }
 
     @Transactional(readOnly = true)

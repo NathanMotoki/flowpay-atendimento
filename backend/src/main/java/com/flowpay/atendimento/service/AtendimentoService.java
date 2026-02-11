@@ -1,5 +1,8 @@
 package com.flowpay.atendimento.service;
 
+import com.flowpay.atendimento.exception.AtendimentoInvalidoException;
+import com.flowpay.atendimento.exception.AtendimentoJaFinalizadoException;
+import com.flowpay.atendimento.exception.ResourceNotFoundException;
 import com.flowpay.atendimento.model.dto.request.NovoAtendimentoRequest;
 import com.flowpay.atendimento.model.dto.response.AtendimentoResponse;
 import com.flowpay.atendimento.model.dto.response.DashboardMetricsResponse;
@@ -34,11 +37,10 @@ public class AtendimentoService {
 
     @Transactional
     public AtendimentoResponse criarAtendimento(NovoAtendimentoRequest request) {
-        log.info("=== Novo Atendimento ===");
-        log.info("Cliente: {} | Assunto: {}", request.clienteNome(), request.assunto());
+
+	validarAtendimento(request);
 
         TipoTime tipoTime = TipoTime.identificarPorAssunto(request.assunto());
-        log.info("Time identificado: {}", tipoTime);
 
         Atendimento atendimento = Atendimento.builder()
                 .clienteNome(request.clienteNome())
@@ -48,7 +50,6 @@ public class AtendimentoService {
                 .build();
 
         Atendimento salvo = atendimentoRepository.save(atendimento);
-        log.info("Atendimento criado com ID: {}", salvo.getId());
 
         boolean distribuido = tentarDistribuir(salvo);
 
@@ -88,14 +89,12 @@ public class AtendimentoService {
 
     @Transactional
     public AtendimentoResponse finalizarAtendimento(Long atendimentoId) {
-        log.info("=== Finalizando Atendimento {} ===", atendimentoId);
 
         Atendimento atendimento = atendimentoRepository.findById(atendimentoId)
-                .orElseThrow(() -> new RuntimeException("Atendimento não encontrado: " + atendimentoId));
+                .orElseThrow(() -> new ResourceNotFoundException("Atendimento", atendimentoId));
 
         if (atendimento.getStatus() == StatusAtendimento.FINALIZADO) {
-            log.warn("Atendimento {} já está finalizado", atendimentoId);
-            return AtendimentoResponse.from(atendimento);
+            throw new AtendimentoJaFinalizadoException(atendimentoId);
         }
 
         TipoTime tipoTime = atendimento.getTipoTime();
@@ -103,19 +102,15 @@ public class AtendimentoService {
 
         atendimento.finalizar();
         atendimentoRepository.save(atendimento);
-        log.info("✅ Atendimento {} finalizado", atendimentoId);
 
         if (atendente != null && !filaService.filaVazia(tipoTime)) {
-            log.info("Verificando fila do time {} para redistribuir...", tipoTime);
 
             Optional<Atendimento> proximoDaFila = filaService.proximoDaFila(tipoTime);
 
             if (proximoDaFila.isPresent()) {
                 Atendimento proximo = proximoDaFila.get();
-                log.info("Próximo da fila encontrado: Atendimento {}", proximo.getId());
 
                 atribuirAtendimento(proximo, atendente);
-                log.info("🔄 Redistribuição automática concluída");
             }
         }
 
@@ -177,5 +172,11 @@ public class AtendimentoService {
                 atendentesOcupados,
                 metricasPorTime
         );
+    }
+
+    private void validarAtendimento(NovoAtendimentoRequest request) {
+        if (request.clienteNome().matches(".*\\d.*")) {
+       		throw new AtendimentoInvalidoException("Nome do cliente não pode conter números");
+    	}
     }
 }
