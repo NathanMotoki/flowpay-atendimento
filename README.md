@@ -1,345 +1,179 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
-</p>
+# 🏦 FlowPay - Sistema de Distribuição de Atendimentos
 
-# 🎯 FlowPay — Sistema de Atendimento
+[![Java](https://img.shields.io/badge/Java-17-orange)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-brightgreen)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18+-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
 
-Sistema completo de **gerenciamento de fila de atendimento** desenvolvido para a FlowPay. A aplicação distribui automaticamente os clientes para os atendentes corretos com base no assunto solicitado, organiza filas por time e oferece um dashboard em tempo real com métricas operacionais.
+> Sistema Full Stack enterprise-grade para gerenciamento inteligente de atendimentos em fintech, implementando distribuição automática, sistema de filas FIFO e monitoramento em tempo real.
 
 ---
 
-## 📑 Índice
+## 📋 Sobre o Projeto
 
-- [Funcionalidades](#-funcionalidades)
-- [Arquitetura](#-arquitetura)
-- [Tecnologias](#-tecnologias)
-- [Pré-requisitos](#-pré-requisitos)
-- [Como Executar](#-como-executar)
-  - [Com Docker (Recomendado)](#-com-docker-recomendado)
-  - [Sem Docker (Manual)](#-sem-docker-manual)
-- [Endpoints da API](#-endpoints-da-api)
-- [Regras de Negócio](#-regras-de-negócio)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Variáveis de Ambiente](#-variáveis-de-ambiente)
+**Contexto:** Desafio técnico para vaga de **Desenvolvedor Sênior Full Stack** na Ubots.
+
+**Problema:** A FlowPay precisa estruturar sua central de relacionamento com distribuição eficiente de atendimentos entre 3 times especializados (Cartões, Empréstimos, Outros Assuntos), respeitando o limite de 3 atendimentos simultâneos por atendente.
+
+**Solução:** Sistema que automatiza completamente a distribuição, implementando regras de negócio complexas, filas de espera FIFO e redistribuição automática ao finalizar atendimentos.
 
 ---
 
-## ✨ Funcionalidades
+## 🎯 Funcionalidades
 
-| Recurso | Descrição |
-|---------|-----------|
-| 📞 **Novo Atendimento** | Cria um atendimento e identifica automaticamente o time responsável pelo assunto |
-| 🔄 **Fila Inteligente** | Distribui clientes automaticamente para atendentes disponíveis ou enfileira quando nenhum está livre |
-| 📊 **Dashboard em Tempo Real** | Métricas ao vivo com atualização a cada 5 segundos (atendimentos ativos, fila, disponibilidade) |
-| 👥 **Gerenciamento de Atendentes** | Cadastro e remoção de atendentes com atribuição por time |
-| ✅ **Finalizar Atendimento** | Encerra atendimento e libera o atendente para o próximo da fila automaticamente |
-| 🌐 **WebSocket** | Suporte a atualizações em tempo real via STOMP/SockJS |
+### Core Business
+- ✅ **Distribuição Inteligente**: Identifica automaticamente o time correto baseado no assunto
+- ✅ **Controle de Capacidade**: Limite de 3 atendimentos simultâneos por atendente
+- ✅ **Sistema de Filas FIFO**: Implementação thread-safe com `LinkedList` + `ConcurrentHashMap`
+- ✅ **Redistribuição Automática**: Ao finalizar, o próximo da fila é automaticamente atribuído
+- ✅ **Balanceamento de Carga**: Query customizada distribui do menos ocupado para o mais ocupado
+
+### Qualidade & Robustez
+- ✅ **Validações em Múltiplas Camadas**: Bean Validation + validações de negócio
+- ✅ **Tratamento de Exceções Centralizado**: GlobalExceptionHandler com respostas padronizadas
+- ✅ **Testes Unitários**: 25+ testes com JUnit 5 + Mockito
+- ✅ **Logs Estruturados**: SLF4J + Lombok para rastreabilidade
+- ✅ **Type Safety**: TypeScript no frontend + Records Java 17+ no backend
 
 ---
 
-## 🏗 Arquitetura
+## 🏗️ Arquitetura
 
+### Visão Geral
 ```
-┌──────────────────┐       ┌──────────────────┐       ┌──────────────────┐
-│                  │       │                  │       │                  │
-│    Frontend      │◄─────►│    Backend       │◄─────►│   PostgreSQL     │
-│  React + Vite    │ REST  │  Spring Boot     │  JPA  │      16          │
-│  :5173           │  API  │  :8080           │       │  :5432           │
-│                  │       │                  │       │                  │
-└──────────────────┘       └──────────────────┘       └──────────────────┘
+┌──────────────┐    HTTP/REST    ┌─────────────────┐
+│   React +    │ ◄─────────────► │  Spring Boot    │
+│  TypeScript  │                 │      API        │
+└──────────────┘                 └────────┬────────┘
+                                          │ JDBC
+                                          ▼
+                                 ┌─────────────────┐
+                                 │   PostgreSQL    │
+                                 └─────────────────┘
 ```
 
-A aplicação utiliza uma arquitetura em **três camadas** totalmente containerizada com Docker Compose:
-
-- **Frontend** — SPA em React 19 com TypeScript, estilizada com Tailwind CSS
-- **Backend** — API REST com Spring Boot 3.5 e Java 21
-- **Banco de Dados** — PostgreSQL 16 com persistência via volume Docker
+### Backend - Camadas
+```
+Controllers (REST API + Exception Handling)
+     ↓
+Services (Business Logic + Validation)
+     ↓
+Repositories (Data Access + Custom Queries)
+     ↓
+Database (PostgreSQL)
+```
 
 ---
 
-## 🛠 Tecnologias
+## 🛠️ Stack Tecnológica
 
 ### Backend
-- **Java 21** + **Spring Boot 3.5**
-- Spring Data JPA / Hibernate
-- Spring WebSocket (STOMP + SockJS)
-- Bean Validation
-- Lombok
-- PostgreSQL Driver
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| Java | 17 | Records, Pattern Matching |
+| Spring Boot | 3.5.10 | Framework base |
+| Spring Data JPA | 3.5.8 | Persistência |
+| PostgreSQL | 16 | Banco de dados |
+| Lombok | 1.18.x | Redução boilerplate |
+| JUnit 5 + Mockito | 5.x | Testes |
 
 ### Frontend
-- **React 19** + **TypeScript 5.9**
-- Vite 7
-- Tailwind CSS 4
-- Axios
-
-### Infraestrutura
-- **Docker** + **Docker Compose**
-- Multi-stage builds para imagens otimizadas
-
----
-
-## 📋 Pré-requisitos
-
-### Com Docker (Recomendado)
-- [Docker](https://docs.docker.com/get-docker/) (v20+)
-- [Docker Compose](https://docs.docker.com/compose/install/) (v2+)
-
-### Sem Docker
-- [Java 21 (JDK)](https://adoptium.net/)
-- [Node.js 18+](https://nodejs.org/)
-- [PostgreSQL 16](https://www.postgresql.org/download/)
-- [Maven 3.9+](https://maven.apache.org/) (ou use o wrapper `mvnw` incluso)
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| React | 18+ | UI Library |
+| TypeScript | 5+ | Type Safety |
+| Vite | 5+ | Build Tool |
+| Axios | 1.x | HTTP Client |
+| Tailwind CSS | 3.x | Styling |
 
 ---
 
-## 🚀 Como Executar
+## 🚀 Como Rodar
 
-### 🐳 Com Docker (Recomendado)
-
-**Um único comando** sobe toda a aplicação:
-
+### Pré-requisitos
 ```bash
-docker compose up --build
+java -version   # 17+
+node -v         # 18+
+docker --version
+mvn -v          # 3.8+
 ```
 
-Aguarde os containers iniciarem e acesse:
-
-| Serviço     | URL                          |
-|-------------|------------------------------|
-| Frontend    | http://localhost:5173         |
-| Backend API | http://localhost:8080/api     |
-| PostgreSQL  | `localhost:5432`              |
-
-Para rodar em segundo plano:
+### Setup Rápido
 
 ```bash
-docker compose up --build -d
-```
+# 1. Clone
+git clone <repositorio>
+cd flowpay
 
-Para parar todos os containers:
+# 2. Configure ambiente
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 
-```bash
-docker compose down
-```
+# 3. Suba PostgreSQL
+docker compose up postgres -d
 
-Para parar e **remover os dados** do banco:
-
-```bash
-docker compose down -v
-```
-
----
-
-### 💻 Sem Docker (Manual)
-
-#### 1. Banco de dados
-
-Crie um banco PostgreSQL local:
-
-```sql
-CREATE DATABASE flowpay;
-```
-
-#### 2. Backend
-
-```bash
+# 4. Backend (terminal 1)
 cd backend
+mvn spring-boot:run
 
-# Linux / macOS
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# Windows
-mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-O perfil `dev` já está configurado para conectar em `localhost:5432/flowpay` com usuário `postgres`/`postgres`.
-
-> A API ficará disponível em **http://localhost:8080**
-
-#### 3. Frontend
-
-```bash
+# 5. Frontend (terminal 2)
 cd frontend
-
 npm install
 npm run dev
 ```
 
-> O frontend ficará disponível em **http://localhost:5173**
+### Acesse
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8080/api
+- **PostgreSQL**: localhost:5432
 
 ---
 
-## 📡 Endpoints da API
+## 📡 API Endpoints
 
-### Atendimentos — `/api/atendimentos`
+### Atendimentos
+```http
+POST   /api/atendimentos              # Criar
+GET    /api/atendimentos              # Listar
+GET    /api/atendimentos/{id}         # Buscar
+PUT    /api/atendimentos/{id}/finalizar # Finalizar
+```
 
-| Método | Rota                            | Descrição                        |
-|--------|---------------------------------|----------------------------------|
-| `POST` | `/api/atendimentos`             | Cria um novo atendimento         |
-| `GET`  | `/api/atendimentos`             | Lista todos os atendimentos      |
-| `GET`  | `/api/atendimentos/{id}`        | Busca atendimento por ID         |
-| `PUT`  | `/api/atendimentos/{id}/finalizar` | Finaliza um atendimento       |
+### Atendentes
+```http
+POST   /api/atendentes                # Criar
+GET    /api/atendentes                # Listar
+```
 
-#### Criar atendimento — Exemplo
+### Dashboard
+```http
+GET    /api/dashboard/metricas        # Métricas
+```
 
+### Exemplo de Request
 ```bash
 curl -X POST http://localhost:8080/api/atendimentos \
   -H "Content-Type: application/json" \
   -d '{
-    "clienteNome": "João Vitor",
-    "assunto": "Problemas com cartão de crédito"
+    "clienteNome": "João Silva",
+    "assunto": "Problemas com cartão bloqueado"
   }'
 ```
 
-O sistema identifica automaticamente o time pelo assunto:
-- Palavras como `cartão`, `cartao` → **Time Cartões**
-- Palavras como `empréstimo`, `contratação` → **Time Empréstimos**
-- Qualquer outro assunto → **Time Outros Assuntos**
-
-### Atendentes — `/api/atendentes`
-
-| Método | Rota                | Descrição                    |
-|--------|---------------------|------------------------------|
-| `POST` | `/api/atendentes`   | Cadastra um novo atendente   |
-| `GET`  | `/api/atendentes`   | Lista todos os atendentes    |
-
-#### Criar atendente — Exemplo
-
-```bash
-curl -X POST http://localhost:8080/api/atendentes \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nome": "Ana Paula",
-    "tipoTime": "CARTOES"
-  }'
+### Exemplo de Response
+```json
+{
+  "id": 1,
+  "clienteNome": "João Silva",
+  "assunto": "Problemas com cartão bloqueado",
+  "tipoTime": "CARTOES",
+  "status": "EM_ATENDIMENTO",
+  "atendenteId": 1,
+  "atendenteNome": "Maria Silva",
+  "dataHoraInicio": "2026-02-11T10:30:00"
+}
 ```
-
-Valores válidos para `tipoTime`: `CARTOES`, `EMPRESTIMOS`, `OUTROS_ASSUNTOS`
-
-### Dashboard — `/api/dashboard`
-
-| Método | Rota                      | Descrição                               |
-|--------|---------------------------|-----------------------------------------|
-| `GET`  | `/api/dashboard/metricas` | Retorna métricas gerais e por time      |
-
----
-
-## 📏 Regras de Negócio
-
-| Regra | Detalhamento |
-|-------|--------------|
-| **Limite por atendente** | Cada atendente pode ter no máximo **3 atendimentos simultâneos** |
-| **Distribuição automática** | Ao criar um atendimento, o sistema busca um atendente disponível do time correspondente. Se houver, o atendimento inicia imediatamente |
-| **Fila por time** | Se nenhum atendente do time está disponível, o atendimento entra na fila daquele time com status `AGUARDANDO` |
-| **Liberação automática** | Ao finalizar um atendimento, o sistema verifica a fila do time e atribui automaticamente o próximo cliente ao atendente que ficou livre |
-| **Identificação de time** | O assunto digitado pelo cliente é analisado por palavras-chave para direcionar ao time correto |
-| **Dados iniciais** | Na primeira execução, 8 atendentes são criados automaticamente (3 Cartões, 3 Empréstimos, 2 Outros Assuntos) |
-
-### Fluxo de um Atendimento
-
-```
-Cliente solicita atendimento
-        │
-        ▼
-Sistema identifica o Time pelo assunto
-        │
-        ▼
-Existe atendente disponível no time?
-       / \
-     Sim   Não
-      │      │
-      ▼      ▼
-  Inicia   Entra na fila
- atendimento  (AGUARDANDO)
-(EM_ATENDIMENTO)   │
-      │            │
-      ▼            │
-  Finalizado ──────┘
-      │     Próximo da fila
-      ▼     é atribuído ao
-   Concluído  atendente livre
-```
-
----
-
-## 📂 Estrutura do Projeto
-
-```
-atendimento-api/
-├── docker-compose.yml              # Orquestração dos containers
-│
-├── backend/                         # API Spring Boot
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── src/main/java/com/flowpay/atendimento/
-│       ├── AtendimentoApiApplication.java
-│       ├── config/
-│       │   ├── DataLoader.java          # Carga inicial de atendentes
-│       │   ├── WebConfig.java           # Configuração CORS
-│       │   └── WebSocketConfig.java     # Configuração WebSocket
-│       ├── controller/
-│       │   ├── AtendenteController.java
-│       │   ├── AtendimentoController.java
-│       │   └── DashboardController.java
-│       ├── model/
-│       │   ├── dto/
-│       │   │   ├── request/             # DTOs de entrada
-│       │   │   └── response/            # DTOs de saída
-│       │   ├── entity/
-│       │   │   ├── Atendente.java
-│       │   │   └── Atendimento.java
-│       │   └── enums/
-│       │       ├── StatusAtendimento.java   # AGUARDANDO, EM_ATENDIMENTO, FINALIZADO
-│       │       └── TipoTime.java            # CARTOES, EMPRESTIMOS, OUTROS_ASSUNTOS
-│       ├── repository/
-│       │   ├── AtendenteRepository.java
-│       │   └── AtendimentoRepository.java
-│       └── service/
-│           ├── AtendenteService.java
-│           ├── AtendimentoService.java
-│           └── FilaService.java             # Gerenciamento de filas em memória
-│
-└── frontend/                        # SPA React
-    ├── Dockerfile
-    ├── package.json
-    └── src/
-        ├── App.tsx                          # Componente principal com navegação
-        ├── components/
-        │   ├── AtendentesList.tsx            # Lista de atendentes e status
-        │   ├── AtendimentosEmAndamento.tsx   # Atendimentos ativos
-        │   ├── FilaAtendimentos.tsx          # Visualização da fila
-        │   ├── GerenciarAtendentes.tsx       # CRUD de atendentes
-        │   ├── MetricsCard.tsx               # Card de métricas do dashboard
-        │   └── NovoAtendimentoForm.tsx       # Formulário de novo atendimento
-        ├── services/
-        │   └── api.ts                       # Configuração Axios e serviços
-        └── types/
-            └── index.ts                     # Tipagens TypeScript
-```
-
----
-
-## ⚙ Variáveis de Ambiente
-
-As variáveis abaixo podem ser configuradas no `docker-compose.yml` ou via arquivo `.env` na raiz do projeto:
-
-| Variável          | Padrão      | Descrição                           |
-|-------------------|-------------|-------------------------------------|
-| `DB_HOST`         | `postgres`  | Host do banco de dados              |
-| `DB_PORT`         | `5432`      | Porta do PostgreSQL                 |
-| `DB_NAME`         | `flowpay`   | Nome do banco de dados              |
-| `DB_USER`         | `postgres`  | Usuário do banco                    |
-| `DB_PASSWORD`     | `postgres`  | Senha do banco                      |
-| `JPA_DDL_AUTO`    | `update`    | Estratégia DDL do Hibernate         |
-| `JPA_SHOW_SQL`    | `false`     | Exibir queries SQL no console       |
-| `VITE_API_BASE_URL` | `http://localhost:8080/api` | URL base da API para o frontend |
 
 ---
 
@@ -348,21 +182,130 @@ As variáveis abaixo podem ser configuradas no `docker-compose.yml` ou via arqui
 ```bash
 cd backend
 
-# Linux / macOS
-./mvnw test
+# Rodar todos
+mvn test
 
-# Windows
-mvnw.cmd test
+# Com cobertura
+mvn clean test jacoco:report
+
+# Apenas uma classe
+mvn test -Dtest=FilaServiceTest
+```
+
+### Cobertura
+- **Total**: 26 testes
+- **Coverage**: >80% (Services + Enums)
+- **Frameworks**: JUnit 5, Mockito, AssertJ
+
+---
+
+## 📊 Modelo de Dados
+
+```sql
+┌─────────────────┐         ┌──────────────────┐
+│   atendentes    │         │   atendimentos   │
+├─────────────────┤         ├──────────────────┤
+│ id (PK)         │◄────────│ id (PK)          │
+│ nome            │ 1     N │ cliente_nome     │
+│ tipo_time       │         │ assunto          │
+└─────────────────┘         │ tipo_time        │
+                            │ status           │
+                            │ atendente_id (FK)│
+                            │ data_hora_inicio │
+                            │ data_hora_fim    │
+                            └──────────────────┘
 ```
 
 ---
 
-## 📜 Licença
+## 🎯 Decisões Técnicas
 
-Este projeto foi desenvolvido como demonstração técnica para a **FlowPay**.
+### 1. Records (Java 17+)
+**Por quê:** Imutabilidade, menos boilerplate, type-safe
+
+### 2. Filas em Memória
+**Por quê:** Performance superior, adequado ao escopo, thread-safe
+
+### 3. FIFO com LinkedList
+**Por quê:** Operações O(1) para `offer()` e `poll()`
+
+### 4. Global Exception Handler
+**Por quê:** Respostas de erro padronizadas, código DRY
+
+### 5. Bean Validation + Service Layer
+**Por quê:** Validações simples no DTO, regras complexas no Service
+
+### 6. TypeScript
+**Por quê:** Type safety, menos bugs, melhor DX
 
 ---
 
-<p align="center">
-  Feito com ☕ e 💻 por <strong>FlowPay Team</strong>
-</p>
+## 🚧 Melhorias Futuras
+
+### Curto Prazo
+- [ ] WebSocket real-time no frontend
+- [ ] Paginação nos endpoints
+- [ ] Swagger/OpenAPI docs
+
+### Médio Prazo
+- [ ] Autenticação JWT + Spring Security
+- [ ] Cache com Redis
+- [ ] Testes de integração
+
+### Longo Prazo
+- [ ] Filas persistentes (RabbitMQ)
+- [ ] Métricas (Prometheus/Grafana)
+- [ ] CI/CD pipeline
+
+---
+
+## 💡 Diferenciais (Nível Sênior)
+
+✅ Arquitetura em camadas (SOLID)  
+✅ 25+ testes unitários (>80% coverage)  
+✅ Exceções personalizadas + GlobalExceptionHandler  
+✅ Validações em múltiplas camadas  
+✅ Records Java 17+ (código moderno)  
+✅ TypeScript (type safety)  
+✅ Docker Compose (fácil setup)  
+✅ Logs estruturados (SLF4J)  
+✅ Código limpo e documentado  
+✅ Decisões técnicas justificadas  
+
+---
+
+## 📚 Tecnologias & Patterns
+
+**Patterns Aplicados:**
+- Repository Pattern
+- Service Layer Pattern
+- DTO Pattern (Records)
+- Builder Pattern (Lombok)
+- Strategy Pattern (TipoTime)
+
+**Boas Práticas:**
+- SOLID Principles
+- Clean Code
+- DRY (Don't Repeat Yourself)
+- Separation of Concerns
+- Fail Fast
+
+---
+
+## 👨‍💻 Desenvolvedor
+
+**Nathan Motoki**  
+Desafio Técnico - Ubots (Vaga Sênior Full Stack)  
+Fevereiro 2026
+
+---
+
+## 📄 Licença
+
+Desenvolvido para fins de avaliação técnica.
+
+---
+
+## 🙏 Agradecimentos
+
+Agradeço à **Ubots** pela oportunidade de demonstrar minhas habilidades técnicas neste desafio.
